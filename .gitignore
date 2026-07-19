@@ -1,0 +1,42 @@
+# ---- .NET / MSBuild ----
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.cache
+*.lock.json
+*.nuget.props
+
+# ---- IDE ----
+.vs/
+.vscode/
+*.sln.DotSettings
+*.DotSettings
+.idea/
+
+# ---- Auto-generated artifacts ----
+*.pdb
+*.log
+*_list.txt
+*_tail.txt
+*_all.txt
+nul
+CHANGELOG.md
+
+# ---- OS ----
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ---- AI Agent / WorkBuddy artifacts (keep out of source control) ----
+.workbuddy/        # WorkBuddy agent memory & project data
+.codebuddy/        # CodeBuddy agent data (if present)
+docs/              # AI-generated design docs & diagrams (not source)
+*_preview.png      # AI-generated preview renders
+*.preview.*
+agent_*            # AI agent scratch outputs
+
+# ---- Temp / scratch ----
+tmp/
+temp/
+*.tmp

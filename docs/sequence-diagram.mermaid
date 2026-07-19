@@ -1,0 +1,66 @@
+sequenceDiagram
+    autonumber
+    actor User
+    participant Prog as Program
+    participant Admin as AdminHelper
+    participant Cfg as ConfigManager
+    participant MF as MainForm
+    participant Bin as BinLocator
+    participant Det as ProjectDetector
+    participant Drv as DriveEnumerator
+    participant BW as BackupWorker
+    participant Proc as ShadowSpawn+7z
+
+    Prog->>Admin: IsAdmin()
+    Admin-->>Prog: isAdmin
+    Prog->>Cfg: Load()
+    Cfg-->>Prog: AppConfig
+    Prog->>MF: new MainForm(cfg, isAdmin, lang)
+    MF->>Bin: AppDirectory / BinDirectory
+    Note over MF: Auto-locate：exe 目录名=="SHBT"? 取父目录；否则从 exe 目录逐级上溯 ≤4 层
+    MF->>Det: Detect(candidate)
+    Det-->>MF: ProjectDetectionResult / null
+    MF->>Drv: ListDrives()
+    Drv-->>MF: List<DriveInfoEx>
+    MF-->>User: 显示工程类型徽章 + 驱动器表格
+
+    User->>MF: 选择目标盘行
+    MF->>MF: OnDriveSelect（受保护盘未勾选强制则拦截）
+    MF-->>User: _selectedDrive 已设置
+
+    User->>MF: 点击「开始备份」
+    alt 非管理员
+        MF->>User: 确认是否重启提权
+        MF->>Admin: RelaunchAsAdmin()（runas, --elevated）
+        Admin->>Prog: 启动新提权进程
+        Prog->>Prog: 旧进程退出
+    else 条件满足
+        MF->>MF: _running=true，进度条 indeterminate
+        MF->>BW: Run(path, drive, typeKey, opts, cts.Token) [Task]
+        BW->>BW: StageChanged(Prepare)
+        BW->>Bin: GetToolPath("ShadowSpawn.exe"/"7z.exe")
+        BW->>BW: BuildCommand() -> BackupCommand
+        BW->>Proc: Process.Start(CreateNoWindow+Hidden, args)
+        BW->>BW: StageChanged(Shadow)
+        loop 读取 stdout 字节流
+            Proc-->>BW: 字节（以 \r 或 \n 分隔）
+            BW->>BW: 首行 => StageChanged(Archive)
+            BW->>BW: 解析 "NN%" => Progress(n)
+            BW-->>MF: Progress / Log（通过控件 BeginInvoke 回 UI 线程）
+        end
+        alt 退出码 == 0
+            BW->>BW: StageChanged(Done)
+            BW->>BW: Completed(true, targetZip)
+        else 退出码 != 0
+            BW->>BW: StageChanged(Error)
+            BW->>BW: Completed(false, msg)
+        end
+    end
+
+    User->>MF: 运行中点击「停止」
+    MF->>BW: cts.Cancel()
+    BW->>Proc: Kill()
+    BW->>BW: StageChanged(Cancel)
+    BW->>BW: Completed(false, cancelMsg)
+
+    BW-->>MF: Completed -> MessageBox + 日志 + 进度条置满/复位

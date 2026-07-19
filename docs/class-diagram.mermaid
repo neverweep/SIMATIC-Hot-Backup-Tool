@@ -1,0 +1,164 @@
+classDiagram
+    direction LR
+
+    class ProjectType {
+        <<enum>>
+        STEP7_V5X
+        WinCC_V7X
+        TIA_Portal
+        Unknown
+    }
+
+    class StageKey {
+        <<enum>>
+        Prepare
+        Shadow
+        Archive
+        Done
+        Cancel
+        Error
+    }
+
+    class DriveInfoEx {
+        +string Letter
+        +string Label
+        +long FreeBytes
+        +long TotalBytes
+        +bool IsProtected
+    }
+
+    class BackupOptions {
+        +string OutputSubdir
+        +string CompressionLevel
+        +List~string~ ExcludeRules
+        +bool ForceProtected
+        +string ShadowLetter
+    }
+
+    class ProjectDetectionResult {
+        +ProjectType Type
+        +string DisplayName
+        +List~string~ Markers
+    }
+
+    class BackupCommand {
+        +string ShadowSpawnExe
+        +string SevenZipExe
+        +string ShadowSource
+        +string ShadowLetter
+        +string ProjectName
+        +string TargetDir
+        +string TargetZip
+        +List~string~ ArchiveArgs
+        +List~string~ PidCommand
+        +string FullCommand
+    }
+
+    class BackupResult {
+        +bool Success
+        +string Message
+    }
+
+    class AppConfig {
+        +string Language
+        +string OutputSubdir
+        +string CompressionLevel
+        +List~string~ ExcludeRules
+        +bool ForceProtected
+        +string LastProjectPath
+        +string WindowGeometry
+    }
+
+    class BinLocator {
+        +string AppDirectory
+        +string BinDirectory
+        +string GetToolPath(name) string
+    }
+
+    class ProjectDetector {
+        +ProjectDetectionResult Detect(path)
+    }
+
+    class DriveEnumerator {
+        +List~DriveInfoEx~ ListDrives()
+        +HashSet~string~ GetUsedLetters()
+    }
+
+    class ConfigManager {
+        +AppConfig Load()
+        +void Save(AppConfig)
+        -AppConfig Defaults()
+    }
+
+    class BackupCommandBuilder {
+        +BackupCommand Build(projectPath, drive, typeKey, BackupOptions)
+        -string FindFreeDriveLetter(preferred, exclude)
+    }
+
+    class BackupWorker {
+        +event EventHandler~int?~ Progress
+        +event EventHandler~StageKey~ StageChanged
+        +event EventHandler~string~ Log
+        +event EventHandler~BackupResult~ Completed
+        +void Run(string projectPath, string drive, string typeKey, BackupOptions opts, CancellationToken token)
+        -void ReadOutput(Process proc, CancellationToken token)
+    }
+
+    class Localization {
+        +enum Lang { ZhCn, En }
+        +string Get(key) string
+        +string StageText(StageKey) string
+        +string ProjectTypeName(ProjectType) string
+        +string FormatBytes(long) string
+    }
+
+    class FontHelper {
+        +string GetSystemFontName() string
+        +void ApplyTo(Control root)
+    }
+
+    class AdminHelper {
+        +bool IsAdmin() bool
+        +bool RelaunchAsAdmin() bool
+    }
+
+    class MainForm {
+        -AppConfig _config
+        -bool _isAdmin
+        -string _projectPath
+        -ProjectDetectionResult _projectType
+        -string _selectedDrive
+        -CancellationTokenSource _cts
+        -bool _running
+        +void OnStart()
+        +void OnDriveSelect()
+        +void OnCancel()
+        -void BackupThread()
+        -void SetStage(StageKey)
+        -void SetProgress(int? pct)
+    }
+
+    class Program {
+        +[STAThread] void Main()
+    }
+
+    BackupWorker ..> BinLocator : uses
+    BackupWorker ..> BackupCommandBuilder : uses
+    BackupWorker ..> BackupResult : returns
+    BackupWorker ..> StageKey : raises
+    BackupCommandBuilder ..> BinLocator : uses
+    BackupCommandBuilder ..> BackupCommand : returns
+    MainForm ..> BackupWorker : subscribes
+    MainForm ..> ProjectDetector : uses
+    MainForm ..> DriveEnumerator : uses
+    MainForm ..> ConfigManager : uses
+    MainForm ..> Localization : uses
+    MainForm ..> FontHelper : uses
+    MainForm ..> AdminHelper : uses
+    Program ..> MainForm : creates
+    Program ..> ConfigManager : loads
+    Program ..> AdminHelper : checks
+    ConfigManager ..> AppConfig : reads/writes
+    ProjectDetector ..> ProjectDetectionResult : returns
+    ProjectDetector ..> ProjectType : sets
+    DriveEnumerator ..> DriveInfoEx : returns

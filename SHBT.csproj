@@ -1,0 +1,139 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>SHBT</AssemblyName>
+    <RootNamespace>SHBT</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <!-- Fully control assembly metadata via Properties/AssemblyInfo.cs -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <ApplicationIcon>Ui\SHBT.ico</ApplicationIcon>
+  </PropertyGroup>
+  <!-- SDK-style projects include all .cs files inside the project tree by default,
+       including subdirectories like tests/. Explicitly remove them so they compile
+       only through their own .csproj files. -->
+  <ItemGroup>
+    <Compile Remove="tests\**\*.cs" />
+    <None Remove="tests\**\*" />
+  </ItemGroup>
+  <!-- 增强版版本源（R5）：内嵌于 csproj，由 BumpVersion 目标在每次构建前安全回写。
+       不再依赖独立的 version.txt（文件已删除），避免字符串替换破坏工程文件。 -->
+  <PropertyGroup>
+    <BuildRevision>17</BuildRevision>
+    <BuildDate>2026.07.19</BuildDate>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Build-time only: lets the .NET 10 SDK compile/reference net48 assemblies -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- RunningProjectDetector 通过 WMI 读取进程命令行，需要 System.Management。 -->
+    <Reference Include="System.Management" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Changelog is tracked as a plain project item (not compiled); copied next to
+         the exe by the CopyChangelog target. version.txt 已删除（R5）。 -->
+    <None Include="CHANGELOG.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Source native tools live in native\ (NOT the build-output bin\). They are
+         copied into the output bin\ subfolder by the CopyNativeTools target below. -->
+    <None Include="native\**\*" />
+    <NativeTool Include="$(ProjectDir)native\**\*" />
+  </ItemGroup>
+  <!-- Auto-increment the build version. Runs before compilation so the generated
+       Properties/Version.g.cs (carrying AssemblyVersion/FileVersion and the display
+       string) is ready for CoreCompile. Version state is kept in the two properties
+       above and rewritten via <XmlPoke> (XML node editing, never string replacement),
+       so the csproj is never corrupted. -->
+  <Target Name="BumpVersion" BeforeTargets="BeforeBuild">
+    <!-- Today's date as yyyy.MM.dd -->
+    <PropertyGroup>
+      <_Today>$([System.DateTime]::Now.ToString('yyyy.MM.dd'))</_Today>
+    </PropertyGroup>
+    <!-- Read the current version state from the embedded properties. -->
+    <PropertyGroup>
+      <_CurDate>$(BuildDate)</_CurDate>
+      <_CurSeq>$(BuildRevision)</_CurSeq>
+    </PropertyGroup>
+    <!-- Increment the daily sequence number (reset to 1 on a new day). -->
+    <PropertyGroup>
+      <_CurSeqInt>$([System.Int32]::Parse('$(_CurSeq)'))</_CurSeqInt>
+      <_NextSeqInt Condition="$(_CurDate) == $(_Today)">$([MSBuild]::Add($(_CurSeqInt), 1))</_NextSeqInt>
+      <_NextSeqInt Condition="$(_CurDate) != $(_Today)">1</_NextSeqInt>
+      <!-- Zero-pad to 2 digits without String.Format (which receives an already
+           stringified argument and ignores the numeric format). Prepend '0' then
+           drop it for >= 10. -->
+      <_NextSeq>0$(_NextSeqInt)</_NextSeq>
+      <_NextSeq Condition="$(_NextSeqInt) &gt;= 10">$(_NextSeqInt)</_NextSeq>
+      <!-- Current (pre-increment) sequence, zero-padded for the display string. -->
+      <_CurSeqPadded>0$(_CurSeqInt)</_CurSeqPadded>
+      <_CurSeqPadded Condition="$(_CurSeqInt) &gt;= 10">$(_CurSeqInt)</_CurSeqPadded>
+      <_Current>$(_Today).$(_CurSeqPadded)</_Current>
+    </PropertyGroup>
+    <!-- Assembly version: strip leading zeros (e.g. 2026.07.16.01 -> 2026.7.16.1). -->
+    <PropertyGroup>
+      <_AsmVer>$(_Today.Substring(0, 4)).$([System.Int32]::Parse('$(_Today.Substring(5, 2))')).$([System.Int32]::Parse('$(_Today.Substring(8, 2))')).$(_CurSeqInt)</_AsmVer>
+    </PropertyGroup>
+    <!-- Render the generated source content. Kept in a property so embedded newlines
+         survive; literal double quotes are valid in element text. -->
+    <PropertyGroup>
+      <_VersionFileContent>// 本文件由构建目标 BumpVersion 自动生成，请勿手动修改。
+// 版本号格式：vYYYY.MM.DD.NN，YYYY.MM.DD 为构建日期，NN 为当日构建序号（从 01 起，每次构建自动 +1）。
+using System.Reflection%3B
+
+[assembly: AssemblyVersion("$(_AsmVer)")]
+[assembly: AssemblyFileVersion("$(_AsmVer)")]
+
+namespace SHBT
+{
+    /// &lt;summary&gt;
+    /// 当前程序版本号（编译期常量，由构建目标 BumpVersion 注入）。
+    /// &lt;/summary&gt;
+    internal static class AppVersion
+    {
+        /// &lt;summary&gt;对外展示用的版本字符串，例如 "v2026.07.16.01"。&lt;/summary&gt;
+        public const string Display = "v$(_Current)"%3B
+    }
+}</_VersionFileContent>
+    </PropertyGroup>
+    <!-- Write Properties/Version.g.cs for the CURRENT build number. -->
+    <WriteLinesToFile File="$(MSBuildProjectDirectory)\Properties\Version.g.cs" Overwrite="true" Lines="$(_VersionFileContent)" />
+    <!-- Advance the version state via XML node editing (safe, never string replace).
+         SDK-style csproj has no default xmlns on disk, so a plain XPath matches. -->
+    <XmlPoke XmlInputPath="$(MSBuildProjectFullPath)" Query="/Project/PropertyGroup[BuildRevision]/BuildRevision" Value="$(_NextSeqInt)" />
+    <XmlPoke XmlInputPath="$(MSBuildProjectFullPath)" Query="/Project/PropertyGroup[BuildDate]/BuildDate" Value="$(_Today)" />
+  </Target>
+  <!-- Copy the native backup tools next to the exe under a bin\ subfolder so that
+       BinLocator can resolve <exe dir>/bin/7z.exe etc. at runtime. -->
+  <Target Name="CopyNativeTools" AfterTargets="Build;Publish">
+    <Copy SourceFiles="@(NativeTool)" DestinationFiles="@(NativeTool-&gt;'$(OutDir)bin\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <!-- Also drop a copy at the project build-output root (bin\) so the dev-time
+         Smoke harness, which checks <repoRoot>\bin\7z.exe, can locate the tools.
+         (No recursive glob remains, so this cannot re-introduce the old recursion.) -->
+    <Copy SourceFiles="@(NativeTool)" DestinationFiles="@(NativeTool-&gt;'$(MSBuildProjectDirectory)\bin\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+  <!-- Language resource files (lang/*.json) are shipped next to the exe, fully
+       independent from the assembly, so new languages can be added at runtime
+       simply by dropping a file into the lang/ folder. -->
+  <ItemGroup>
+    <None Include="lang\**\*" />
+    <LangResource Include="$(ProjectDir)lang\**\*" />
+  </ItemGroup>
+  <!-- Copy the external language resources into the output lang\ folder (and the
+       dev bin\lang folder) so the running exe can discover them at startup. -->
+  <Target Name="CopyLangFiles" AfterTargets="Build;Publish">
+    <Copy SourceFiles="@(LangResource)" DestinationFiles="@(LangResource-&gt;'$(OutDir)lang\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(LangResource)" DestinationFiles="@(LangResource-&gt;'$(MSBuildProjectDirectory)\bin\lang\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+  <!-- Copy the changelog next to the exe (and the dev bin\ root) so users can read
+       release notes without opening the repo. Mirrors CopyNativeTools/CopyLangFiles:
+       one copy under OutDir, one under the project bin\ root. -->
+  <Target Name="CopyChangelog" AfterTargets="Build;Publish">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\CHANGELOG.md" DestinationFiles="$(OutDir)CHANGELOG.md" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\CHANGELOG.md" DestinationFiles="$(MSBuildProjectDirectory)\bin\CHANGELOG.md" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

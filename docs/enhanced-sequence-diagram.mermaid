@@ -1,0 +1,54 @@
+sequenceDiagram
+    actor User
+    participant MF as MainForm
+    participant FWC as ForceWriteConfirmForm
+    participant DSC as DiskSpaceChecker
+    participant BW as BackupWorker (Task)
+    participant BCB as BackupCommandBuilder
+    participant Seven as 7z/ShadowSpawn
+    participant Cfg as ConfigManager
+
+    User->>MF: 勾选目标盘(多选) + 勾选"强制写盘" + 点开始
+    MF->>MF: OnDriveItemCheck → 首个勾选=★主目标
+    alt 勾选受保护盘 且 未勾选强制
+        MF-->>User: 自动取消勾选 + 提示 protected_blocked
+    end
+    User->>MF: 点击"开始备份"
+    MF->>MF: CanStart? (admin & 项目已识别 & 已选目标)
+    alt force 且 含受保护目标
+        MF->>FWC: ShowConfirm (专用文案 force_start_confirm_*)
+        FWC-->>MF: DialogResult
+        opt 取消
+            MF-->>User: 终止，不执行
+        end
+    end
+    MF->>DSC: CheckTargets(源目录, 勾选盘列表)
+    DSC-->>MF: 各盘 free ≥ 源大小×1.1 ?
+    alt 任一不足
+        MF->>MF: 高亮该行红色 + 提示 space_insufficient
+        MF-->>User: 阻止开始
+    else 全部充足
+        MF->>MF: 收集 ExcludeRules(面板) + AddRecoveryData(勾选)
+        MF->>BW: Task.Run Run(源, 盘列表, typeKey, opts, token)
+        BW->>BCB: Build(主目标盘)
+        BCB-->>BW: BackupCommand(主zip路径, 启用规则→-xr!, + -rr10%若恢复开)
+        BW->>Seven: 启动 ShadowSpawn+7z (隐藏窗口)
+        loop 读取 stdout
+            Seven-->>BW: "  53%"
+            BW->>BW: ParseProgress → Progress(53)
+            BW-->>MF: Progress(53) [BeginInvoke]
+            MF->>MF: progressBar.Value = 53
+        end
+        Seven-->>BW: exit 0
+        BW->>BW: RaiseStage(Copy)
+        loop 其余勾选目标
+            BW->>BW: File.Copy(主zip → 目标zip)
+            alt 失败
+                BW-->>MF: Log(warn: 复制失败已跳过)
+            end
+        end
+        BW-->>MF: Completed(true, 主zip路径) [BeginInvoke]
+        MF->>Cfg: 写 LastBackupPath/Time + Save
+        MF->>MF: lastBackupLabel 显示"上次备份：路径 / 时间"
+        MF-->>User: 完成提示
+    end

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Sandbox execution harness: compiles the framework-agnostic Core + Localization
+       sources directly (zero WinForms dependency) and runs the same assertions as the
+       net48 MSTest project, so the logic can be VERIFIED on the available .NET 10
+       runtime. This is NOT the deliverable test project (that is tests/Tests.csproj,
+       net48). It exists only because the .NET 10 SDK's net-framework test host crashes
+       in this sandbox. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- net10.0-windows is required so UseWindowsForms pulls in System.Windows.Forms
+         and System.Drawing (no extra NuGet package needed). FontHelper depends on
+         both when it creates/measures fonts. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>Smoke</AssemblyName>
+    <RootNamespace>SHBT.Smoke</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Compile the framework-agnostic Core sources directly. RunningProjectDetector
+         uses System.Management (WMI) which is a net48 framework assembly but on net10
+         requires the Windows Compatibility Pack (not installable in this offline build
+         sandbox). It only inspects live Siemens processes and is covered by the net48
+         MSTest project instead, so it is excluded from this net10 harness. -->
+    <Compile Include="..\..\Core\*.cs" Exclude="..\..\Core\RunningProjectDetector.cs" />
+    <Compile Include="..\..\Ui\Localization.cs" />
+    <!-- Regression target: reference the fixed source directly (no copy). -->
+    <Compile Include="..\..\Ui\FontHelper.cs" />
+    <!-- R10 二次确认对话框：仅依赖 FontHelper / Localization / WinForms，可在 net10 下编译与构造。 -->
+    <Compile Include="..\..\Ui\ForceWriteConfirmForm.cs" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+</Project>

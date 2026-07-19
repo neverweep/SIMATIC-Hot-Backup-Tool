@@ -1,0 +1,124 @@
+classDiagram
+    class ExcludeRule {
+        +bool Enabled
+        +string Pattern
+        +string Comment
+    }
+    class BackupOptions {
+        +string OutputSubdir
+        +string CompressionLevel
+        +List~ExcludeRule~ ExcludeRules
+        +bool AddRecoveryData
+        +bool ForceProtected
+        +string ShadowLetter
+    }
+    class AppConfig {
+        +string Language
+        +string OutputSubdir
+        +string CompressionLevel
+        +List~ExcludeRule~ ExcludeRules
+        +List~string~ ExcludeRulesLegacy
+        +bool AddRecoveryData
+        +bool ForceProtected
+        +string LastProjectPath
+        +string WindowGeometry
+        +string LastBackupPath
+        +string LastBackupTime
+    }
+    class ConfigManager {
+        +AppConfig Defaults()
+        +AppConfig Load()
+        +void Save(AppConfig)
+        +List~string~ NormalizeExcludePatterns(IEnumerable~string~)
+        -void MigrateExcludes(AppConfig)
+    }
+    class BackupCommand {
+        +string SevenZipExe
+        +string ShadowSpawnExe
+        +string ShadowSource
+        +string ShadowLetter
+        +string ProjectName
+        +string TargetDir
+        +string TargetZip
+        +List~string~ ArchiveArgs
+        +List~string~ PidCommand
+        +string FullCommand
+    }
+    class BackupCommandBuilder {
+        +BackupCommand Build(string,string,string,BackupOptions)
+        +string ComputeTargetZip(string,BackupOptions,string,string)
+        +string FindFreeDriveLetter(string,HashSet~string~)
+    }
+    class BackupResult {
+        +bool Success
+        +string Message
+    }
+    class BackupWorker {
+        +event EventHandler~int?~ Progress
+        +event EventHandler~StageKey~ StageChanged
+        +event EventHandler~string~ Log
+        +event EventHandler~BackupResult~ Completed
+        +void Run(string, List~string~, string, BackupOptions, CancellationToken)
+        -void CopyToTargets(BackupCommand, List~string~, BackupOptions, string, string)
+    }
+    class DiskSpaceChecker {
+        +long EstimateSourceSize(string)
+        +Dictionary~string,SpaceCheck~ CheckTargets(string, List~string~)
+    }
+    class SpaceCheck {
+        +string Drive
+        +long FreeBytes
+        +long NeededBytes
+        +bool Ok
+    }
+    class StageKey {
+        <<enum>>
+        Prepare
+        Shadow
+        Archive
+        Copy
+        Done
+        Cancel
+        Error
+    }
+    class DriveInfoEx {
+        +string Letter
+        +string Label
+        +long FreeBytes
+        +long TotalBytes
+        +bool IsProtected
+        +DriveType Type
+    }
+    class MainForm {
+        +void OnStartClick()
+        +void OnDriveItemCheck()
+        +void OnBackupFinished(BackupResult)
+    }
+    class ExcludeRuleRow {
+        +ExcludeRule Rule
+        +event EventHandler Changed
+        +event EventHandler Delete
+    }
+    class ForceWriteConfirmForm {
+        +DialogResult ShowConfirm()
+    }
+    class Localization {
+        +void Initialize(string)
+        +string Get(string)
+    }
+
+    BackupOptions "1" *-- "0..*" ExcludeRule : contains
+    AppConfig "1" *-- "0..*" ExcludeRule : ExcludeRules
+    AppConfig ..> ConfigManager : loaded/saved by
+    BackupCommandBuilder ..> BackupCommand : creates
+    BackupWorker ..> BackupCommandBuilder : uses
+    BackupWorker ..> BackupResult : raises
+    BackupWorker ..> DiskSpaceChecker : uses
+    DiskSpaceChecker ..> DriveInfoEx : reads free space
+    MainForm ..> BackupWorker : starts
+    MainForm ..> ConfigManager : load/save
+    MainForm ..> DiskSpaceChecker : precheck
+    MainForm ..> ExcludeRuleRow : hosts rows
+    MainForm ..> ForceWriteConfirmForm : shows
+    MainForm ..> Localization : strings
+    ExcludeRuleRow ..> ExcludeRule : edits

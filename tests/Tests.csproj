@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Per port requirement: an MSTest project targeting net48. It compiles cleanly
+       against the product API. NOTE: actual net48 EXECUTION in this sandbox is blocked
+       by an environment/tooling defect - the .NET 10 SDK's net-framework test host
+       (testhost.net48.exe) crashes with 0xC0000005 - so run it on a real Win10/11 box
+       (where .NET Framework 4.8 + a working host exist). See QA report. -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.6.4" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.6.4" />
+    <!-- Reference assemblies so net48 compiles under the .NET SDK. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SHBT.csproj" />
+  </ItemGroup>
+</Project>
