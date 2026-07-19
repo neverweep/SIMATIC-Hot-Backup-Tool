@@ -66,6 +66,9 @@ namespace SHBT.Ui
             }
             catch { }
 
+            // 左下角开源组件链接：软件名→官网、协议名→本地协议文件（子链接，共享点击处理）。
+            SetupOssLinks();
+
             _config = config;
             _isAdmin = isAdmin;
             Localization.CurrentCode = langCode;
@@ -329,6 +332,42 @@ namespace SHBT.Ui
             catch
             {
                 // 无默认邮件客户端时静默失败，不影响程序。
+            }
+        }
+
+        /// <summary>
+        /// 为左下角两个开源组件链接配置"子链接"：软件名点击跳官网/仓库，协议名点击打开
+        /// 随附的本地协议文本文件（THIRD_PARTY_LICENSES.txt）。两个 LinkLabel 各自含两段
+        /// 可点击文本，共享 OnOssLinkClicked，按 LinkData 决定打开目标。
+        /// 仅在构造函数中调用一次（链接文本为固定专有名词，不随语言变化）。
+        /// </summary>
+        private void SetupOssLinks()
+        {
+            string licenseFile = System.IO.Path.Combine(
+                System.AppContext.BaseDirectory, "THIRD_PARTY_LICENSES.txt");
+
+            // 7-Zip："7-Zip" -> 官网；"LGPL" -> 本地协议文件
+            _sevenZipLink.Links.Clear();
+            _sevenZipLink.Links.Add(0, "7-Zip".Length, "https://www.7-zip.org/");
+            int lgpl = _sevenZipLink.Text.IndexOf("LGPL", System.StringComparison.Ordinal);
+            if (lgpl >= 0) _sevenZipLink.Links.Add(lgpl, "LGPL".Length, licenseFile);
+
+            // ShadowSpawn："ShadowSpawn" -> 仓库；"MIT" -> 本地协议文件
+            _shadowSpawnLink.Links.Clear();
+            _shadowSpawnLink.Links.Add(0, "ShadowSpawn".Length, "https://github.com/candera/shadowspawn");
+            int mit = _shadowSpawnLink.Text.IndexOf("MIT", System.StringComparison.Ordinal);
+            if (mit >= 0) _shadowSpawnLink.Links.Add(mit, "MIT".Length, licenseFile);
+
+            _sevenZipLink.LinkClicked += OnOssLinkClicked;
+            _shadowSpawnLink.LinkClicked += OnOssLinkClicked;
+        }
+
+        /// <summary>左下角开源组件子链接点击：按 LinkData 打开（官网 URL 或本地协议文件）。</summary>
+        private void OnOssLinkClicked(object sender, System.Windows.Forms.LinkLabelLinkClickedEventArgs e)
+        {
+            if (e.Link?.LinkData is string target && !string.IsNullOrEmpty(target))
+            {
+                OpenUrl(target);
             }
         }
 

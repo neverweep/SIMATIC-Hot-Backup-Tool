@@ -612,8 +612,13 @@ namespace SHBT.Ui
             this._btnDetectWinCC.Click += new System.EventHandler(this.OnDetectRunningClick);
             this._btnDetectTIA.Click += new System.EventHandler(this.OnDetectRunningClick);
             this._btnDetectStep7.Click += new System.EventHandler(this.OnDetectRunningClick);
-            this._sevenZipLink.LinkClicked += (s, e) => OpenUrl("https://www.7-zip.org/");
-            this._shadowSpawnLink.LinkClicked += (s, e) => OpenUrl("https://github.com/candera/shadowspawn");
+            // 开源组件链接的子链接（软件名→官网、协议名→本地声明）统一在
+            // MainForm.SetupOssLinks() 中接线，由 OnOssLinkClicked 按 LinkData 打开；
+            // 此处不再整体绑定网站，否则会无视子链接、恒打开网页。
+            // The OSS links' sub-links (software name -> website, license name ->
+            // local declaration) are wired in SetupOssLinks(); do NOT bind the
+            // whole link to a URL here, otherwise the in-parentheses license
+            // links would always open a web page instead of the local file.
             this.pathTextBox.TextChanged += new System.EventHandler(this.OnPathTextChanged);
             // 增强版（R4）：用 ItemCheck 代替 SelectedIndexChanged 来跟踪勾选的目标盘。
             this.driveListView.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.OnDriveItemCheck);

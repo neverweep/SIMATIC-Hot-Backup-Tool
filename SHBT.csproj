@@ -22,8 +22,8 @@
   <!-- 增强版版本源（R5）：内嵌于 csproj，由 BumpVersion 目标在每次构建前安全回写。
        不再依赖独立的 version.txt（文件已删除），避免字符串替换破坏工程文件。 -->
   <PropertyGroup>
-    <BuildRevision>17</BuildRevision>
-    <BuildDate>2026.07.19</BuildDate>
+    <BuildRevision>2</BuildRevision>
+    <BuildDate>2026.07.20</BuildDate>
   </PropertyGroup>
   <ItemGroup>
     <!-- Build-time only: lets the .NET 10 SDK compile/reference net48 assemblies -->
@@ -37,6 +37,8 @@
     <!-- Changelog is tracked as a plain project item (not compiled); copied next to
          the exe by the CopyChangelog target. version.txt 已删除（R5）。 -->
     <None Include="CHANGELOG.md" />
+    <!-- 第三方开源组件许可声明（7-Zip LGPL + ShadowSpawn MIT），随 exe 发布。 -->
+    <None Include="THIRD_PARTY_LICENSES.txt" />
   </ItemGroup>
   <ItemGroup>
     <!-- Source native tools live in native\ (NOT the build-output bin\). They are
@@ -135,5 +137,11 @@ namespace SHBT
   <Target Name="CopyChangelog" AfterTargets="Build;Publish">
     <Copy SourceFiles="$(MSBuildProjectDirectory)\CHANGELOG.md" DestinationFiles="$(OutDir)CHANGELOG.md" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(MSBuildProjectDirectory)\CHANGELOG.md" DestinationFiles="$(MSBuildProjectDirectory)\bin\CHANGELOG.md" SkipUnchangedFiles="true" />
+  </Target>
+  <!-- Copy the third-party license declaration next to the exe (and the dev bin\
+       root) so end users who receive only SHBT.exe + bin\ can read the OSS notices. -->
+  <Target Name="CopyThirdPartyLicenses" AfterTargets="Build;Publish">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\THIRD_PARTY_LICENSES.txt" DestinationFiles="$(OutDir)THIRD_PARTY_LICENSES.txt" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\THIRD_PARTY_LICENSES.txt" DestinationFiles="$(MSBuildProjectDirectory)\bin\THIRD_PARTY_LICENSES.txt" SkipUnchangedFiles="true" />
   </Target>
 </Project>

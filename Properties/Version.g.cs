@@ -2,8 +2,8 @@
 // 版本号格式：vYYYY.MM.DD.NN，YYYY.MM.DD 为构建日期，NN 为当日构建序号（从 01 起，每次构建自动 +1）。
 using System.Reflection;
 
-[assembly: AssemblyVersion("2026.7.19.16")]
-[assembly: AssemblyFileVersion("2026.7.19.16")]
+[assembly: AssemblyVersion("2026.7.20.1")]
+[assembly: AssemblyFileVersion("2026.7.20.1")]
 
 namespace SHBT
 {
@@ -13,6 +13,6 @@ namespace SHBT
     internal static class AppVersion
     {
         /// <summary>对外展示用的版本字符串，例如 "v2026.07.16.01"。</summary>
-        public const string Display = "v2026.07.19.16";
+        public const string Display = "v2026.07.20.01";
     }
 }
