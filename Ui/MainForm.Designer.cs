@@ -489,8 +489,9 @@ namespace SHBT.Ui
                 // 自动换行，仅保留垂直滚动条（取消横向滚动条）。
                 WordWrap = true,
                 ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical,
-                Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right,
-                Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point)
+                Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right
+                // 不显式设置 Font：沿用窗体默认字体（Microsoft Sans Serif 8.25F），
+                // 与其它所有控件（源路径框/排除规则框等）保持一致。
             };
 
             this.logTable.Controls.Add(this.logTextBox, 0, 0);

@@ -22,7 +22,7 @@
   <!-- 增强版版本源（R5）：内嵌于 csproj，由 BumpVersion 目标在每次构建前安全回写。
        不再依赖独立的 version.txt（文件已删除），避免字符串替换破坏工程文件。 -->
   <PropertyGroup>
-    <BuildRevision>4</BuildRevision>
+    <BuildRevision>5</BuildRevision>
     <BuildDate>2026.07.24</BuildDate>
   </PropertyGroup>
   <ItemGroup>
