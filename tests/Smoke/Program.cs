@@ -293,7 +293,9 @@ namespace SHBT.Smoke
 
             foreach (string d in mtDrives.Skip(1))
             {
-                string otherZip = BackupCommandBuilder.ComputeTargetZip(d, mtOpts, exclProject, "TIA_Portal");
+                // #5：传入主目标 zip 的时间戳，确保复制目的地与主目标共用同一文件名（不跨秒）。
+                string mtTs = System.Text.RegularExpressions.Regex.Match(mtMainZip, @"_(\d{8}_\d{6})\.zip$").Groups[1].Value;
+                string otherZip = BackupCommandBuilder.ComputeTargetZip(d, mtOpts, exclProject, "TIA_Portal", mtTs);
                 Check("multi-target: 目标 " + d + " 复制目的地位于 " + d + ":\\Backups",
                     otherZip.StartsWith(d + ":\\Backups", StringComparison.OrdinalIgnoreCase));
                 Check("multi-target: 目标 " + d + " 与主目标共用同一 zip 名（复制前提）",

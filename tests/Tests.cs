@@ -492,7 +492,9 @@ namespace SHBT.Tests
             string mainTargetDir = drives[0] + ":\\" + (string.IsNullOrEmpty(opts.OutputSubdir) ? "Backups" : opts.OutputSubdir);
             foreach (string d in drives.Skip(1))
             {
-                string other = BackupCommandBuilder.ComputeTargetZip(d, opts, proj, "TIA_Portal");
+                // #5：传入主目标 zip 的时间戳，确保复制目的地与主目标共用同一文件名（不跨秒）。
+                string mainTs = System.Text.RegularExpressions.Regex.Match(main.TargetZip, @"_(\d{8}_\d{6})\.zip$").Groups[1].Value;
+                string other = BackupCommandBuilder.ComputeTargetZip(d, opts, proj, "TIA_Portal", mainTs);
                 Assert.IsTrue(other.StartsWith(d + ":\\Backups", StringComparison.OrdinalIgnoreCase),
                     "目标 " + d + " 复制目的地应位于 " + d + ":\\Backups");
                 Assert.AreEqual(Path.GetFileName(other), Path.GetFileName(main.TargetZip),

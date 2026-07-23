@@ -486,9 +486,9 @@ namespace SHBT.Ui
             {
                 Multiline = true,
                 ReadOnly = true,
-                // No forced wrapping + show a horizontal scrollbar for long lines.
-                WordWrap = false,
-                ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Both,
+                // 自动换行，仅保留垂直滚动条（取消横向滚动条）。
+                WordWrap = true,
+                ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical,
                 Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right,
                 Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point)
             };

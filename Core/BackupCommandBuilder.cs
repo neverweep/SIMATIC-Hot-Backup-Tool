@@ -52,7 +52,7 @@ namespace SHBT.Core
         /// <param name="typeKey">项目类型键（枚举名）。</param>
         /// <param name="opts">本次备份的选项；为 <c>null</c> 时使用默认值。</param>
         /// <returns>已完全解析的 <see cref="BackupCommand"/>。</returns>
-        public static BackupCommand Build(string projectPath, string drive, string typeKey, BackupOptions opts)
+        public static BackupCommand Build(string projectPath, string drive, string typeKey, BackupOptions opts, HashSet<string> excludeShadowLetters = null)
         {
             opts = opts ?? new BackupOptions();
             projectPath = Path.GetFullPath(projectPath);
@@ -60,28 +60,35 @@ namespace SHBT.Core
             // 需快照的卷为项目所在的父目录，而非项目目录本身（以便归档其中的整个项目）。
             string shadowSource = Path.GetDirectoryName(projectPath);
 
-            string outputSubdir = string.IsNullOrEmpty(opts.OutputSubdir) ? "Backups" : opts.OutputSubdir;
             string compressionLevel = string.IsNullOrEmpty(opts.CompressionLevel) ? "max" : opts.CompressionLevel;
             // R2：仅取「启用且 Pattern 非空」的规则进入 -xr!。
             List<string> excludeRules = NormalizeEnabledRules(opts.ExcludeRules);
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
-            string shadowLetter = opts.ShadowLetter;
-            if (string.IsNullOrEmpty(shadowLetter))
+            // 计算 VSS 卷影挂载盘符：以 opts.ShadowLetter（默认 Q）为首选，
+            // 排除所有已挂载盘符以及用户勾选的目标盘，避免挂到真实盘/目标盘上（#2）。
+            var usedLetters = new HashSet<string>(DriveEnumerator.GetUsedLetters(), StringComparer.OrdinalIgnoreCase);
+            if (excludeShadowLetters != null)
             {
-                // 未指定盘符时，从首选 Q 盘开始自动查找空闲盘符作为 VSS 挂载点。
-                shadowLetter = FindFreeDriveLetter("Q", DriveEnumerator.GetUsedLetters());
+                foreach (string ex in excludeShadowLetters)
+                {
+                    if (!string.IsNullOrEmpty(ex))
+                    {
+                        usedLetters.Add(ex.ToUpperInvariant());
+                    }
+                }
             }
 
-            shadowLetter = shadowLetter.ToUpperInvariant();
+            string preferred = string.IsNullOrEmpty(opts.ShadowLetter) ? "Q" : opts.ShadowLetter;
+            string shadowLetter = FindFreeDriveLetter(preferred, usedLetters).ToUpperInvariant();
 
             string sevenZipExe = BinLocator.GetToolPath("7z.exe");
             string shadowSpawnExe = BinLocator.GetToolPath("ShadowSpawn.exe");
 
             drive = (drive ?? string.Empty).TrimEnd(':').ToUpperInvariant();
-            string targetDir = drive + ":\\" + outputSubdir;
-            string zipName = string.Format("{0}_{1}_{2}.zip", projectName, FileTypeToken(typeKey), timestamp);
-            string targetZip = Path.Combine(targetDir, zipName);
+            // 复用统一路径生成器，确保主目标 zip 命名与复制目的地一致（#5）。
+            string targetZip = BuildTargetZipPath(drive, opts, projectPath, typeKey, timestamp);
+            string targetDir = Path.GetDirectoryName(targetZip);
 
             string mxFlag = ConfigManager.CompressionLevels.TryGetValue(compressionLevel, out string mx)
                 ? mx
@@ -168,13 +175,30 @@ namespace SHBT.Core
         /// <param name="projectPath">待备份项目目录的绝对路径。</param>
         /// <param name="typeKey">项目类型键（枚举名）。</param>
         /// <returns>目标盘上备份产物的完整路径。</returns>
-        public static string ComputeTargetZip(string drive, BackupOptions opts, string projectPath, string typeKey)
+        /// <summary>
+        /// 返回目标盘上备份 zip 的完整路径（命名规则与主目标完全一致）。
+        /// 供多目标复制阶段（R4）计算"其余目标盘的复制目的地"时使用。
+        /// 为避免与主目标归档跨秒导致时间戳不一致（#5），可传入与主目标相同的
+        /// <paramref name="timestamp"/>；为 <c>null</c> 时自动取当前时间。
+        /// </summary>
+        public static string ComputeTargetZip(string drive, BackupOptions opts, string projectPath, string typeKey, string timestamp = null)
+        {
+            return BuildTargetZipPath(drive, opts, projectPath, typeKey, timestamp);
+        }
+
+        /// <summary>按统一命名规则生成目标 zip 完整路径；供 <see cref="Build"/> 与
+        /// <see cref="ComputeTargetZip"/> 复用，确保主目标与复制目的地时间戳一致（#5）。</summary>
+        private static string BuildTargetZipPath(string drive, BackupOptions opts, string projectPath, string typeKey, string timestamp)
         {
             opts = opts ?? new BackupOptions();
             projectPath = Path.GetFullPath(projectPath);
             string projectName = Path.GetFileName(projectPath.TrimEnd('\\', '/'));
             string outputSubdir = string.IsNullOrEmpty(opts.OutputSubdir) ? "Backups" : opts.OutputSubdir;
-            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            if (string.IsNullOrEmpty(timestamp))
+            {
+                timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            }
+
             drive = (drive ?? string.Empty).TrimEnd(':').ToUpperInvariant();
             string targetDir = drive + ":\\" + outputSubdir;
             string zipName = string.Format("{0}_{1}_{2}.zip", projectName, FileTypeToken(typeKey), timestamp);

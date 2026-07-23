@@ -21,12 +21,21 @@ namespace SHBT.Core
     /// </summary>
     public static class RunningProjectDetector
     {
-        /// <summary>每种项目类型对应的进程名候选（按优先级尝试）。</summary>
+        /// <summary>每种项目类型对应的进程映像名候选（按优先级尝试）。</summary>
+        /// <remarks>
+        /// GetProcessesByName 匹配的是真实进程映像名，而非窗口标题中的 "TIA Portal" 等字样，
+        /// 因此这里只列真实映像名（#8）：
+        ///   - WinCC Classic 工程管理/浏览器为 WinCCExplorer.exe；CCProjectMgr 为部分版本的工程进程。
+        ///   - TIA Portal 主进程为 Siemens.Automation.Portal.exe。
+        ///   - STEP 7 V5.x SIMATIC Manager 映像名为 s7manager.exe。
+        /// 以上仅为快速路径；真正可靠的识别仍依赖下方 WMI 命令行 + 工程目录校验（即便映像名
+        /// 匹配不到，也会回退到命令行扫描）。
+        /// </remarks>
         private static readonly Dictionary<ProjectType, string[]> ProcessNames = new Dictionary<ProjectType, string[]>
         {
-            { ProjectType.WinCC_V7X,  new[] { "CCProjectMgr", "CCProjectManager", "WinCCExplorer" } },
-            { ProjectType.TIA_Portal, new[] { "Siemens.Automation.Portal", "TIA Portal" } },
-            { ProjectType.STEP7_V5X,  new[] { "s7manager", "SIMATIC Manager" } }
+            { ProjectType.WinCC_V7X,  new[] { "WinCCExplorer", "CCProjectMgr", "CCProjectManager" } },
+            { ProjectType.TIA_Portal, new[] { "Siemens.Automation.Portal" } },
+            { ProjectType.STEP7_V5X,  new[] { "s7manager", "S7Manager" } }
         };
 
         /// <summary>

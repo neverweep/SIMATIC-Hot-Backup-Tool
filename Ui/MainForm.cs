@@ -101,6 +101,17 @@ namespace SHBT.Ui
             // Apply splitter sizing on Load: at construction time the SplitContainer
             // has no real width yet, and setting SplitterDistance/Panel*MinSize would
             // throw. Once the form is laid out, Width is correct so the values are valid.
+
+            // #10：排除规则文本框防抖落盘——输入时不立即写盘，停顿后再保存。
+            _exclSaveTimer = new System.Windows.Forms.Timer(components) { Interval = 600 };
+            _exclSaveTimer.Tick += (s, e) =>
+            {
+                _exclSaveTimer.Stop();
+                if (_config != null)
+                {
+                    ConfigManager.Save(_config);
+                }
+            };
             this.Load += (s, e) =>
             {
                 const int panel1Min = 360;
@@ -113,6 +124,9 @@ namespace SHBT.Ui
                 mainSplit.SplitterDistance = Math.Max(panel1Min, dist);
                 // 免责声明：错误级别（红色），提示用户自行测试、风险自担。
                 Log(T("disclaimer"), "err");
+                // 安全提示（警告级别）：开始备份前，请保存所有编辑并关闭无关 WinCC 窗口，
+                // 仅保留运行画面与管理器，确保所有修改已储存。置于后果自负之后。
+                Log("⚠ " + "请保存所有编辑中的内容，并关闭除运行画面和管理器的WinCC窗口，确保所有修改已经储存。", "warn");
                 // 运行模式移出标题区，改为在 Load 时写入日志（管理员绿 / 非管理员紫）。
                 Log(T("mode_label") + (_isAdmin ? T("mode_admin") : T("mode_user")), _isAdmin ? "admin" : "user");
             };
@@ -241,17 +255,32 @@ namespace SHBT.Ui
 
             string current = string.IsNullOrEmpty(_config.CompressionLevel) ? "max" : _config.CompressionLevel;
             _compKey = current;
-            foreach (var kv in _compOptions)
+            // #9：临时屏蔽 OnCompressionChanged，避免在这里以编程方式设置 Text 时触发多余写盘。
+            _suppressCompEvent = true;
+            try
             {
-                if (kv.Key == current)
+                foreach (var kv in _compOptions)
                 {
-                    compComboBox.Text = kv.Value;
-                    break;
+                    if (kv.Key == current)
+                    {
+                        compComboBox.Text = kv.Value;
+                        break;
+                    }
                 }
+            }
+            finally
+            {
+                _suppressCompEvent = false;
             }
         }
 
         private bool _suppressLangEvent;
+
+        // #9：重建压缩选项下拉框时临时屏蔽 OnCompressionChanged，避免触发多余的配置写盘。
+        private bool _suppressCompEvent;
+
+        // #10：排除规则文本框防抖落盘定时器（输入停顿 600ms 后再保存配置）。
+        private System.Windows.Forms.Timer _exclSaveTimer;
 
         /// <summary>Fills the language picker from the languages discovered at
         /// startup (see <see cref="Localization.Languages"/>).</summary>
@@ -762,17 +791,18 @@ namespace SHBT.Ui
             return list;
         }
 
-        /// <summary>判断当前勾选目标中是否包含受保护（授权/加密狗）盘。</summary>
-        private bool HasProtectedSelected()
+        /// <summary>判断给定目标盘列表中是否包含受保护（授权/加密狗）盘。
+        /// 直接基于传入的实时列表判断，不再依赖可能滞后的 <see cref="_selectedDrives"/>（#4）。</summary>
+        private bool HasProtectedSelected(List<string> drives)
         {
-            if (_selectedDrives == null)
+            if (drives == null || _driveList == null)
             {
                 return false;
             }
 
-            foreach (string letter in _selectedDrives)
+            foreach (string letter in drives)
             {
-                DriveInfoEx drive = _driveList?.Find(d => string.Equals(d.Letter, letter, StringComparison.OrdinalIgnoreCase));
+                DriveInfoEx drive = _driveList.Find(d => string.Equals(d.Letter, letter, StringComparison.OrdinalIgnoreCase));
                 if (drive != null && drive.IsProtected)
                 {
                     return true;
@@ -815,6 +845,11 @@ namespace SHBT.Ui
 
         private void OnCompressionChanged(object sender, EventArgs e)
         {
+            if (_suppressCompEvent)
+            {
+                return;
+            }
+
             string display = compComboBox.Text;
             foreach (var kv in _compOptions)
             {
@@ -833,26 +868,47 @@ namespace SHBT.Ui
         // ----------------------------------------------------------------- //
         /// <summary>将当前配置中的排除规则以"每行一条"形式载入多行文本框。
         /// 注意：WinForms 多行 TextBox 只把 CRLF（\r\n）识别为换行，单个 \n 会
-        /// 被合并到同一行显示，因此这里必须用 Environment.NewLine 拼接。</summary>
+        /// 被合并到同一行显示，因此这里必须用 Environment.NewLine 拼接。
+        /// 被禁用的规则以行首 '#' 标记（gitignore 风格），从而保留其 Enabled=false
+        /// 状态，避免经文本框编辑后"禁用"被悄悄重新启用（#7）。</summary>
         private void LoadExcludeTextBox()
         {
             var rules = _config.ExcludeRules ?? new List<ExcludeRule>();
             exclTextBox.Lines = rules
-                .Select(r => (r.Pattern ?? "").Trim())
-                .Where(s => s.Length > 0)
+                .Select(r =>
+                {
+                    string p = (r.Pattern ?? "").Trim();
+                    return p.Length == 0 ? null : (r.Enabled ? p : "#" + p);
+                })
+                .Where(s => s != null)
                 .ToArray();
         }
 
-        /// <summary>从多行文本框解析排除规则列表：每行一条，全部启用、无注释。</summary>
+        /// <summary>从多行文本框解析排除规则列表：每行一条；行首 '#' 表示禁用
+        /// （gitignore 风格），解析时剥离 '#' 并将 Enabled 置为 false，从而保留界面上
+        /// "禁用"的规则（#7）。</summary>
         private List<ExcludeRule> GetExcludeRulesFromTextBox()
         {
             var list = new List<ExcludeRule>();
             foreach (var line in exclTextBox.Text.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var p = line.Trim();
+                var raw = line.Trim();
+                if (raw.Length == 0)
+                {
+                    continue;
+                }
+
+                bool enabled = true;
+                string p = raw;
+                if (p.StartsWith("#"))
+                {
+                    enabled = false;
+                    p = p.Substring(1).Trim();
+                }
+
                 if (p.Length > 0)
                 {
-                    list.Add(new ExcludeRule { Enabled = true, Pattern = p, Comment = string.Empty });
+                    list.Add(new ExcludeRule { Enabled = enabled, Pattern = p, Comment = string.Empty });
                 }
             }
 
@@ -863,7 +919,16 @@ namespace SHBT.Ui
         private void OnExcludeTextChanged(object sender, EventArgs e)
         {
             _config.ExcludeRules = GetExcludeRulesFromTextBox();
-            ConfigManager.Save(_config);
+            // #10：防抖——输入过程中不频繁落盘，停顿 600ms 后再保存配置。
+            if (_exclSaveTimer != null)
+            {
+                _exclSaveTimer.Stop();
+                _exclSaveTimer.Start();
+            }
+            else
+            {
+                ConfigManager.Save(_config);
+            }
         }
 
         /// <summary>弹出"默认排除项说明"对话框，逐条解释默认配置中排除的每种文件。
@@ -987,7 +1052,8 @@ namespace SHBT.Ui
         {
             if (!_isAdmin) return false;
             if (_projectType == null) return false;
-            if (_selectedDrives == null || _selectedDrives.Count == 0) return false;
+            // 直接读取界面实时勾选状态，避免依赖异步刷新的 _selectedDrives（#4）。
+            if (GetOrderedCheckedDrives().Count == 0) return false;
             return true;
         }
 
@@ -1038,7 +1104,9 @@ namespace SHBT.Ui
             }
 
             // R10：勾选目标包含受保护盘时，弹出专用确认对话框；取消则放弃启动。
-            if (HasProtectedSelected())
+            // 直接基于界面实时勾选列表判断，避免依赖可能滞后的 _selectedDrives（#4）。
+            List<string> ordered = GetOrderedCheckedDrives();
+            if (HasProtectedSelected(ordered))
             {
                 using (var dlg = new ForceWriteConfirmForm())
                 {

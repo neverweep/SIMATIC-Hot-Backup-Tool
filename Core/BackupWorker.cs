@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -69,7 +70,12 @@ namespace SHBT.Core
                 // R4：首个勾选盘为 ★ 主目标，其余为目标副本。
                 string mainDrive = (drives[0] ?? string.Empty).TrimEnd(':').ToUpperInvariant();
 
-                BackupCommand cmd = BackupCommandBuilder.Build(projectPath, mainDrive, typeKey, opts);
+                // 将全部勾选目标盘（含主目标）一并排除出 VSS 卷影盘符候选，
+                // 防止 ShadowSpawn 把源卷挂到某个目标盘上导致备份写错位置（#2）。
+                var shadowExclude = new HashSet<string>(
+                    drives.Select(d => (d ?? string.Empty).TrimEnd(':').ToUpperInvariant()),
+                    StringComparer.OrdinalIgnoreCase);
+                BackupCommand cmd = BackupCommandBuilder.Build(projectPath, mainDrive, typeKey, opts, shadowExclude);
 
                 try
                 {
@@ -101,6 +107,18 @@ namespace SHBT.Core
                 using (var proc = new Process { StartInfo = psi })
                 {
                     proc.Start();
+
+                    // #1：stdout 由独立线程逐字节读取，stderr 同样必须排空，否则一旦写入
+                    // 超过管道缓冲（约 4KB）子进程会阻塞，导致 HasExited 永远为 false 而轮询死循环。
+                    proc.ErrorDataReceived += (s, e) =>
+                    {
+                        if (!string.IsNullOrEmpty(e.Data))
+                        {
+                            RaiseLog(e.Data);
+                        }
+                    };
+                    proc.BeginErrorReadLine();
+
                     RaiseStage(StageKey.Shadow);
 
                     _archiveStarted = false;
@@ -136,8 +154,15 @@ namespace SHBT.Core
                     try { exitCode = proc.ExitCode; }
                     catch { exitCode = -1; }
 
-                    if (exitCode == 0)
+                    // 7-Zip 退出码语义：0 = 成功；1 = 警告（个别文件未能读取，但归档通常
+                    // 仍有效可用）——两者均视为成功并完成复制阶段；2 及以上为致命错误。
+                    if (exitCode == 0 || exitCode == 1)
                     {
+                        if (exitCode == 1)
+                        {
+                            RaiseLog("⚠ 7-Zip 以「警告」状态退出（代码 1）：归档可能不完全，请检查日志。 / 7-Zip exited with warnings (code 1): archive may be incomplete, check the log.");
+                        }
+
                         // R4：主目标归档成功 → 进入复制阶段，将产物复制到其余勾选目标。
                         RaiseStage(StageKey.Copy);
                         CopyToTargets(cmd, drives, opts, mainDrive, cmd.TargetZip);
@@ -189,6 +214,13 @@ namespace SHBT.Core
                     mainZip.StartsWith(mainTargetDir, StringComparison.OrdinalIgnoreCase))
                 {
                     destZip = otherTargetDir + mainZip.Substring(mainTargetDir.Length);
+                }
+
+                // 防范前缀替换失败时 destZip 兜底等于 mainZip 导致的自我复制。
+                if (string.Equals(destZip, mainZip, StringComparison.OrdinalIgnoreCase))
+                {
+                    RaiseLog("Skipped self-copy to " + destZip);
+                    continue;
                 }
 
                 try
