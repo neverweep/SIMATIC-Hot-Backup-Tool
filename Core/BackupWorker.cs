@@ -89,7 +89,7 @@ namespace SHBT.Core
                 }
 
                 RaiseLog("> " + cmd.FullCommand);
-                RaiseLog("目标文件: " + cmd.TargetZip);
+                RaiseLog(string.Format(SHBT.Ui.Localization.Get("log_target_file"), cmd.TargetZip));
 
                 var psi = new ProcessStartInfo
                 {
@@ -160,7 +160,7 @@ namespace SHBT.Core
                     {
                         if (exitCode == 1)
                         {
-                            RaiseLog("⚠ 7-Zip 以「警告」状态退出（代码 1）：归档可能不完全，请检查日志。 / 7-Zip exited with warnings (code 1): archive may be incomplete, check the log.");
+                            RaiseLog(SHBT.Ui.Localization.Get("warn_7zip_warning"));
                         }
 
                         // R4：主目标归档成功 → 进入复制阶段，将产物复制到其余勾选目标。

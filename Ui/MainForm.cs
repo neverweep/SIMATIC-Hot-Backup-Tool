@@ -125,8 +125,8 @@ namespace SHBT.Ui
                 // 免责声明：错误级别（红色），提示用户自行测试、风险自担。
                 Log(T("disclaimer"), "err");
                 // 安全提示（警告级别）：开始备份前，请保存所有编辑并关闭无关 WinCC 窗口，
-                // 仅保留运行画面与管理器，确保所有修改已储存。置于后果自负之后。
-                Log("⚠ " + "请保存所有编辑中的内容，并关闭除运行画面和管理器的WinCC窗口，确保所有修改已经储存。", "warn");
+                // 仅保留运行画面与管理器，确保所有修改已储存。置于后果自负之后。现已本地化（warn_save）。
+                Log(T("warn_save"), "warn");
                 // 运行模式移出标题区，改为在 Load 时写入日志（管理员绿 / 非管理员紫）。
                 Log(T("mode_label") + (_isAdmin ? T("mode_admin") : T("mode_user")), _isAdmin ? "admin" : "user");
             };
