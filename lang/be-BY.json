@@ -104,12 +104,6 @@
   "restore_confirm_title": "Аднавіць правілы",
   "restore_confirm_msg": "Вярнуць правілы выключэння? Вашы правілы будуць выдалены.",
   "restored_defaults": "Правілы выключэння адноўлены.",
-  "detect_running_wincc": "Знайсці WinCC",
-  "detect_running_tia": "Знайсці TIA",
-  "detect_running_step7": "Знайсці STEP 7",
-  "detect_running_found": "Выяўлены запушчаны праект {0}:\n{1}",
-  "detect_running_none": "Запушчаны праект {0} не знойдзены.",
-  "detect_running_hint": "Аўтавыяўленне запушчанага праекта:",
   "rule_help": "Правілы",
   "detected_project": "Праэкт выяўлены — {0}: {1}"
 }

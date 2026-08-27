@@ -104,12 +104,6 @@
   "restore_confirm_title": "恢復預設規則",
   "restore_confirm_msg": "將排除規則恢復為預設值？自訂排除規則將被清除。",
   "restored_defaults": "已恢復預設排除規則。",
-  "detect_running_wincc": "偵測 WinCC",
-  "detect_running_tia": "偵測 TIA",
-  "detect_running_step7": "偵測 STEP 7",
-  "detect_running_found": "已偵測到執行中的 {0} 專案：\n{1}",
-  "detect_running_none": "未偵測到執行中的 {0} 專案。",
-  "detect_running_hint": "自動偵測正在執行的專案：",
   "rule_help": "規則說明",
   "detected_project": "已識別工程 — {0}：{1}"
 }

@@ -104,12 +104,6 @@
   "restore_confirm_title": "Восстановить правила",
   "restore_confirm_msg": "Сбросить правила исключения? Ваши правила будут удалены.",
   "restored_defaults": "Правила исключения восстановлены.",
-  "detect_running_wincc": "Найти WinCC",
-  "detect_running_tia": "Найти TIA",
-  "detect_running_step7": "Найти STEP 7",
-  "detect_running_found": "Обнаружен запущенный проект {0}:\n{1}",
-  "detect_running_none": "Запущенный проект {0} не найден.",
-  "detect_running_hint": "Автообнаружение запущенного проекта:",
   "rule_help": "Правила",
   "detected_project": "Проект обнаружен — {0}: {1}"
 }

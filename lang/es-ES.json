@@ -104,12 +104,6 @@
   "restore_confirm_title": "Restaurar reglas",
   "restore_confirm_msg": "¿Restaurar reglas de exclusión? Se borrarán tus reglas.",
   "restored_defaults": "Reglas de exclusión restauradas.",
-  "detect_running_wincc": "Detectar WinCC",
-  "detect_running_tia": "Detectar TIA",
-  "detect_running_step7": "Detectar STEP 7",
-  "detect_running_found": "Proyecto {0} en ejecución detectado:\n{1}",
-  "detect_running_none": "No se detectó ningún proyecto {0} en ejecución.",
-  "detect_running_hint": "Detección automática de un proyecto en ejecución:",
   "rule_help": "Reglas",
   "detected_project": "Proyecto detectado — {0}: {1}"
 }

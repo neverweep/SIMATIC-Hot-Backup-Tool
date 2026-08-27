@@ -104,12 +104,6 @@
   "restore_confirm_title": "Ripristina regole",
   "restore_confirm_msg": "Ripristinare le regole di esclusione? Le tue regole verranno cancellate.",
   "restored_defaults": "Regole di esclusione ripristinate.",
-  "detect_running_wincc": "Rileva WinCC",
-  "detect_running_tia": "Rileva TIA",
-  "detect_running_step7": "Rileva STEP 7",
-  "detect_running_found": "Progetto {0} in esecuzione rilevato:\n{1}",
-  "detect_running_none": "Nessun progetto {0} in esecuzione rilevato.",
-  "detect_running_hint": "Rilevamento automatico di un progetto in esecuzione:",
   "rule_help": "Regole",
   "detected_project": "Progetto rilevato — {0}: {1}"
 }

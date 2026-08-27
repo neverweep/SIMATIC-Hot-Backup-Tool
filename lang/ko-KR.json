@@ -104,12 +104,6 @@
   "restore_confirm_title": "기본 규칙 복원",
   "restore_confirm_msg": "제외 규칙을 기본값으로 되돌립니까? 사용자 규칙은 삭제됩니다.",
   "restored_defaults": "기본 제외 규칙을 복원했습니다.",
-  "detect_running_wincc": "WinCC 감지",
-  "detect_running_tia": "TIA 감지",
-  "detect_running_step7": "STEP 7 감지",
-  "detect_running_found": "실행 중인 {0} 프로젝트 감지됨:\n{1}",
-  "detect_running_none": "실행 중인 {0} 프로젝트를 찾을 수 없습니다.",
-  "detect_running_hint": "실행 중인 프로젝트 자동 감지:",
   "rule_help": "규칙",
   "detected_project": "프로젝트 감지됨 — {0}: {1}"
 }

@@ -169,9 +169,6 @@ namespace SHBT.Ui
 
             srcGroup.Text = T("group_source");
             browseButton.Text = T("browse");
-            _btnDetectWinCC.Text = T("detect_running_wincc");
-            _btnDetectTIA.Text = T("detect_running_tia");
-            _btnDetectStep7.Text = T("detect_running_step7");
             tgtGroup.Text = T("group_target");
             // 增强版（R4）：提示文案改为多目标勾选说明。
             tgtHint.Text = T("target_multi_hint");
@@ -488,44 +485,6 @@ namespace SHBT.Ui
                     pathTextBox.Text = dlg.SelectedPath;
                     OnPathChanged();
                 }
-            }
-        }
-
-        /// <summary>
-        /// 检测当前正在运行的指定类型工程（WinCC / TIA Portal / STEP7），
-        /// 命中后自动填入工程路径并识别类型；未检测到则提示。
-        /// </summary>
-        private void OnDetectRunningClick(object sender, EventArgs e)
-        {
-            var btn = sender as Button;
-            if (btn == null || !(btn.Tag is ProjectType type))
-            {
-                return;
-            }
-
-            Cursor = Cursors.WaitCursor;
-            string path;
-            try
-            {
-                path = RunningProjectDetector.FindRunning(type);
-            }
-            finally
-            {
-                Cursor = Cursors.Default;
-            }
-
-            if (!string.IsNullOrEmpty(path))
-            {
-                _projectPath = path;
-                pathTextBox.Text = path;
-                OnPathChanged();
-                Log(string.Format(T("detect_running_found"), Localization.ProjectTypeName(type), path), "ok");
-            }
-            else
-            {
-                string msg = string.Format(T("detect_running_none"), Localization.ProjectTypeName(type));
-                Log(msg, "warn");
-                MessageBox.Show(msg, T("type_label"), MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 

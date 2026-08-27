@@ -104,12 +104,6 @@
   "confirm_no": "Cancel",
   "__native_name": "English",
   "__english_name": "English",
-  "detect_running_wincc": "Detect WinCC",
-  "detect_running_tia": "Detect TIA",
-  "detect_running_step7": "Detect STEP 7",
-  "detect_running_found": "Detected running {0} project:\n{1}",
-  "detect_running_none": "No running {0} project detected.",
-  "detect_running_hint": "Auto-detect a currently running project:",
   "rule_help": "Rule help",
   "detected_project": "Project detected — {0}: {1}"
 }

@@ -104,12 +104,6 @@
   "restore_confirm_title": "Regeln zurücksetzen",
   "restore_confirm_msg": "Ausschlussregeln zurücksetzen? Deine Regeln werden entfernt.",
   "restored_defaults": "Ausschlussregeln zurückgesetzt.",
-  "detect_running_wincc": "WinCC finden",
-  "detect_running_tia": "TIA finden",
-  "detect_running_step7": "STEP 7 finden",
-  "detect_running_found": "Laufendes {0}-Projekt erkannt:\n{1}",
-  "detect_running_none": "Kein laufendes {0}-Projekt gefunden.",
-  "detect_running_hint": "Automatisch ein aktuell laufendes Projekt erkennen:",
   "rule_help": "Regeln",
   "detected_project": "Projekt erkannt — {0}: {1}"
 }

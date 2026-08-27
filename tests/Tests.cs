@@ -598,17 +598,5 @@ namespace SHBT.Tests
         }
     }
 
-    [TestClass]
-    public class RunningProjectDetectorTests
-    {
-        [TestMethod]
-        public void FindRunning_DoesNotThrow_AndReturnsNullOrValidDir()
-        {
-            foreach (ProjectType t in new[] { ProjectType.WinCC_V7X, ProjectType.TIA_Portal, ProjectType.STEP7_V5X })
-            {
-                string r = RunningProjectDetector.FindRunning(t);
-                Assert.IsTrue(r == null || Directory.Exists(r), "returned path must exist or be null");
-            }
-        }
-    }
+
 }

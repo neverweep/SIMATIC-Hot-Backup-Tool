@@ -10,7 +10,18 @@
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
+    <!-- Stop the SDK default **/*.cs glob from sweeping tests/Smoke/** (the Smoke
+         harness lives inside tests/ and its generated obj/*.AssemblyInfo.cs collides
+         with this project's assembly attributes -> CS0579). Compile only this file. -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- Microsoft.NETFramework.ReferenceAssemblies already emits the net48
+         TargetFrameworkAttribute; disable the SDK's duplicate emission to avoid CS0579. -->
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Tests.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />

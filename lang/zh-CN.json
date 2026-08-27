@@ -104,12 +104,6 @@
   "confirm_no": "取消",
   "__native_name": "简体中文",
   "__english_name": "Chinese (Simplified)",
-  "detect_running_wincc": "检测 WinCC",
-  "detect_running_tia": "检测 TIA",
-  "detect_running_step7": "检测 STEP 7",
-  "detect_running_found": "检测到运行中的 {0} 项目：\n{1}",
-  "detect_running_none": "未检测到运行中的 {0} 项目。",
-  "detect_running_hint": "自动检测正在运行的项目：",
   "rule_help": "规则说明",
   "detected_project": "已识别工程 — {0}：{1}"
 }

@@ -104,12 +104,6 @@
   "restore_confirm_title": "既定のルールを復元",
   "restore_confirm_msg": "除外ルールを既定値に戻しますか？カスタムルールは削除されます。",
   "restored_defaults": "既定の除外ルールを復元しました。",
-  "detect_running_wincc": "WinCC を検出",
-  "detect_running_tia": "TIA を検出",
-  "detect_running_step7": "STEP 7 を検出",
-  "detect_running_found": "実行中の {0} プロジェクトを検出しました:\n{1}",
-  "detect_running_none": "実行中の {0} プロジェクトが見つかりません。",
-  "detect_running_hint": "実行中のプロジェクトを自動検出:",
   "rule_help": "ルール",
   "detected_project": "プロジェクトを検出 — {0}: {1}"
 }

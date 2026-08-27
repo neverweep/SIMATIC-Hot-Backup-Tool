@@ -20,13 +20,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Compile the framework-agnostic Core sources directly. RunningProjectDetector
-         uses System.Management (WMI) which is a net48 framework assembly but on net10
-         requires the Windows Compatibility Pack (not installable in this offline build
-         sandbox). It only inspects live Siemens processes and is covered by the net48
-         MSTest project instead, so it is excluded from this net10 harness. -->
-    <Compile Include="..\..\Core\*.cs" Exclude="..\..\Core\RunningProjectDetector.cs" />
-    <Compile Include="..\..\Ui\Localization.cs" />
+    <!-- Compile the framework-agnostic Core sources directly. -->
+    <Compile Include="..\..\Core\*.cs" />    <Compile Include="..\..\Ui\Localization.cs" />
     <!-- Regression target: reference the fixed source directly (no copy). -->
     <Compile Include="..\..\Ui\FontHelper.cs" />
     <!-- R10 二次确认对话框：仅依赖 FontHelper / Localization / WinForms，可在 net10 下编译与构造。 -->

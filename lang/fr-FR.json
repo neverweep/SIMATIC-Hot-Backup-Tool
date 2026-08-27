@@ -104,12 +104,6 @@
   "restore_confirm_title": "Restaurer les règles",
   "restore_confirm_msg": "Réinitialiser les règles d'exclusion ? Vos règles seront effacées.",
   "restored_defaults": "Règles d'exclusion réinitialisées.",
-  "detect_running_wincc": "Détecter WinCC",
-  "detect_running_tia": "Détecter TIA",
-  "detect_running_step7": "Détecter STEP 7",
-  "detect_running_found": "Projet {0} en cours détecté :\n{1}",
-  "detect_running_none": "Aucun projet {0} en cours détecté.",
-  "detect_running_hint": "Détection automatique d'un projet en cours :",
   "rule_help": "Règles",
   "detected_project": "Projet détecté — {0} : {1}"
 }

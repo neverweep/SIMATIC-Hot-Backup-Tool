@@ -104,12 +104,6 @@
   "restore_confirm_title": "Kembalikan aturan",
   "restore_confirm_msg": "Kembalikan aturan pengecualian ke bawaan? Aturan kustom akan dihapus.",
   "restored_defaults": "Aturan pengecualian bawaan dipulihkan.",
-  "detect_running_wincc": "Deteksi WinCC",
-  "detect_running_tia": "Deteksi TIA",
-  "detect_running_step7": "Deteksi STEP 7",
-  "detect_running_found": "Proyek {0} yang berjalan terdeteksi:\n{1}",
-  "detect_running_none": "Tidak ada proyek {0} yang berjalan terdeteksi.",
-  "detect_running_hint": "Deteksi otomatis proyek yang sedang berjalan:",
   "rule_help": "Aturan",
   "detected_project": "Proyek terdeteksi — {0}: {1}"
 }

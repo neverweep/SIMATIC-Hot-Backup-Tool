@@ -60,12 +60,6 @@ namespace SHBT.Ui
         private System.Windows.Forms.Button _restoreButton;       // 恢复默认规则按钮（仅复位排除规则）
         private System.Windows.Forms.FlowLayoutPanel _optBtnPanel;   // 承载"规则说明"+"恢复默认规则"按钮的流式面板（间距同检测按钮）
 
-        // 源工程组：浏览按钮下方的"检测正在运行的项目"三连按钮。
-        private System.Windows.Forms.FlowLayoutPanel _detectPanel;   // 承载三个检测按钮的流式面板
-        private System.Windows.Forms.Button _btnDetectWinCC;         // 检测 WinCC 项目
-        private System.Windows.Forms.Button _btnDetectTIA;           // 检测 TIA Portal 项目
-        private System.Windows.Forms.Button _btnDetectStep7;         // 检测 STEP 7 项目
-        private System.Windows.Forms.TableLayoutPanel _typeRow;      // 第 2 行容器：工程类型（左，填满）+ 检测按钮（右，自适应）
 
         private System.Windows.Forms.TableLayoutPanel opPanel;
         private System.Windows.Forms.Label lastBackupLabel;       // 上次备份位置（只读；时间已含于文件名，不再单独记录）
@@ -172,9 +166,7 @@ namespace SHBT.Ui
             // right edge on 125%/150%/175% scaling (the original 90F bug).
             this.srcTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
             this.srcTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize)); // 工程路径行（第 0 行）
-            // 第 1 行承载跨两列的 _typeRow（Dock=Fill）。该行必须为"确定高度"（Percent），
-            // 否则 AutoSize 行内的 Dock=Fill 子容器会塌缩为 0 高度，导致类型文字与检测按钮整体消失。
-            this.srcTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F)); // 类型（左）+ 检测按钮（右）
+            this.srcTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F)); // type-badge row (Percent height keeps the Dock=Fill child from collapsing)
 
             this.pathTextBox = new System.Windows.Forms.TextBox
             {
@@ -208,74 +200,12 @@ namespace SHBT.Ui
                 Margin = new System.Windows.Forms.Padding(0, 0, 0, 0)
             };
 
-            // 检测正在运行的项目：三个按钮，置于流式面板内（自动换行以适配长本地化文案）。
-            this._btnDetectWinCC = new System.Windows.Forms.Button
-            {
-                AutoSize = true,
-                AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink,
-                MinimumSize = new System.Drawing.Size(84, 24),
-                Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Top,
-                Margin = new System.Windows.Forms.Padding(0, 0, 6, 0),
-                Tag = ProjectType.WinCC_V7X
-            };
-            this._btnDetectTIA = new System.Windows.Forms.Button
-            {
-                AutoSize = true,
-                AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink,
-                MinimumSize = new System.Drawing.Size(84, 24),
-                Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Top,
-                Margin = new System.Windows.Forms.Padding(0, 0, 6, 0),
-                Tag = ProjectType.TIA_Portal
-            };
-            this._btnDetectStep7 = new System.Windows.Forms.Button
-            {
-                AutoSize = true,
-                AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink,
-                MinimumSize = new System.Drawing.Size(84, 24),
-                Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Top,
-                Margin = new System.Windows.Forms.Padding(0, 0, 0, 0),
-                Tag = ProjectType.STEP7_V5X
-            };
-            this._detectPanel = new System.Windows.Forms.FlowLayoutPanel
-            {
-                // 三个检测按钮靠右对齐，并与左侧"工程类型"文字垂直居中于同一行：
-                // AutoSize 自适应宽度、Anchor=Right 靠右、无额外顶部 Margin。
-                FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight,
-                WrapContents = false,
-                AutoSize = true,
-                AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink,
-                Anchor = System.Windows.Forms.AnchorStyles.Right,
-                Padding = new System.Windows.Forms.Padding(0),
-                Margin = new System.Windows.Forms.Padding(0, 0, 0, 0)
-            };
-            this._detectPanel.Controls.Add(this._btnDetectWinCC);
-            this._detectPanel.Controls.Add(this._btnDetectTIA);
-            this._detectPanel.Controls.Add(this._btnDetectStep7);
-
-            // 第 2 行容器：左侧"工程类型："文字填满剩余宽度，右侧三个检测按钮自适应并靠右。
-            // 关键修复：检测按钮面板若直接置于 srcTable 第 1 列（AutoSize），该列宽度会被三个按钮撑宽，
-            // 反过来挤窄第 0 列（源文本框）。改为统一放进 _typeRow（跨两列、整行满宽），
-            // 使 srcTable 第 1 列宽度仅由浏览按钮决定，不再被检测按钮挤占。
-            this._typeRow = new System.Windows.Forms.TableLayoutPanel
-            {
-                Dock = System.Windows.Forms.DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 1,
-                Padding = new System.Windows.Forms.Padding(0),
-                Margin = new System.Windows.Forms.Padding(0, 4, 0, 0)
-            };
-            this._typeRow.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this._typeRow.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
-            this._typeRow.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this._typeRow.Controls.Add(this.typeBadge, 0, 0);
-            this._typeRow.Controls.Add(this._detectPanel, 1, 0);
 
             this.srcTable.Controls.Add(this.pathTextBox, 0, 0);
             this.srcTable.Controls.Add(this.browseButton, 1, 0);
-            // 工程类型文字（左，填满）+ 三个检测按钮（右，自适应靠右）同处一行：
-            // 放入跨两列的 _typeRow，使 srcTable 第 1 列宽度仅由浏览按钮决定，不再被检测按钮撑宽。
-            this.srcTable.Controls.Add(this._typeRow, 0, 1);
-            this.srcTable.SetColumnSpan(this._typeRow, 2);
+            // 工程类型文字单独占一行（跨两列），不再附带"检测运行项目"按钮。
+            this.srcTable.Controls.Add(this.typeBadge, 0, 1);
+            this.srcTable.SetColumnSpan(this.typeBadge, 2);
             this.srcGroup.Controls.Add(this.srcTable);
 
             // ---- Target drive group (full width) ----
@@ -610,9 +540,6 @@ namespace SHBT.Ui
             // ---- Wire events ----
             this.languageComboBox.SelectedIndexChanged += new System.EventHandler(this.OnLanguageChanged);
             this.browseButton.Click += new System.EventHandler(this.OnBrowseClick);
-            this._btnDetectWinCC.Click += new System.EventHandler(this.OnDetectRunningClick);
-            this._btnDetectTIA.Click += new System.EventHandler(this.OnDetectRunningClick);
-            this._btnDetectStep7.Click += new System.EventHandler(this.OnDetectRunningClick);
             // 开源组件链接的子链接（软件名→官网、协议名→本地声明）统一在
             // MainForm.SetupOssLinks() 中接线，由 OnOssLinkClicked 按 LinkData 打开；
             // 此处不再整体绑定网站，否则会无视子链接、恒打开网页。
